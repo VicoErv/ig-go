@@ -2,8 +2,10 @@ package v1
 
 import (
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"math"
 	"math/rand"
 	"strconv"
@@ -50,4 +52,34 @@ func GenerateUUID() string {
 	}
 
 	return result
+}
+
+// CreateMD5 create md5
+func CreateMD5(data string) string {
+	algo := md5.New()
+	algo.Write([]byte("password"))
+
+	md5 := hex.EncodeToString(algo.Sum(nil))
+
+	return md5
+}
+
+// GenerateDeviceID Generate device id
+func GenerateDeviceID() string {
+	// timestamp = Time.now.to_i.to_s
+	// 'android-' + create_md5(timestamp)[0..16]
+
+	var timestamp = time.Now().UTC().UnixNano()
+
+	return "android-" + CreateMD5(string(timestamp))[0:16]
+}
+
+// GenerateSignature generate signature
+func GenerateSignature(data interface{}) string {
+	// data = data.to_json
+	// compute_hash(data) + '.' + data
+	b, _ := json.Marshal(data)
+	sB := string(b)
+
+	return ComputeHash(string(sB)) + "." + string(sB)
 }
