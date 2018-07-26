@@ -4,12 +4,16 @@ import (
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/go-resty/resty"
 )
 
 // ComputeHash compute hash
@@ -78,8 +82,98 @@ func GenerateDeviceID() string {
 func GenerateSignature(data interface{}) string {
 	// data = data.to_json
 	// compute_hash(data) + '.' + data
-	b, _ := json.Marshal(data)
+	b, err := json.Marshal(data)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	sB := string(b)
 
 	return ComputeHash(string(sB)) + "." + string(sB)
+}
+
+// Http is builder
+type Http struct {
+	url     string
+	method  string
+	body    string
+	headers map[string]string
+}
+
+// Get get http
+func (b *Http) Get(url string) *Http {
+	b.url = url
+	b.method = "GET"
+
+	return b
+}
+
+// Post is post
+func (b *Http) Post(url string, body string) *Http {
+	b.url = url
+	b.body = body
+	b.method = "POST"
+
+	return b
+}
+
+// With is with
+func (b *Http) With(headers map[string]string) *Http {
+	b.headers = headers
+
+	return b
+}
+
+// Exec execute http
+func (b *Http) Exec() string {
+	var result string
+
+	if b.method == "GET" {
+		var response = b.execGet()
+		result = string(response.Body())
+	} else if b.method == "POST" {
+		var response = b.execPost()
+		result = string(response.Body())
+	}
+
+	return result
+}
+
+func (b *Http) execGet() *resty.Response {
+	resp, _ := resty.R().
+		SetHeaders(map[string]string{
+			"Accept":               "*/*",
+			"Accept-Encoding":      "gzip, deflate, sdch",
+			"Accept-Language":      "en-US",
+			"X-IG-Capabilities":    Capabilities,
+			"X-IG-Connection-Type": Type,
+		}).
+		SetHeaders(b.headers).
+		Get(Url + b.url)
+
+	return resp
+}
+
+func (b *Http) execPost() *resty.Response {
+	resty.SetProxy("http://127.0.0.1:8888")
+	resty.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+
+	resp, err := resty.R().
+		SetHeaders(map[string]string{
+			"Accept":               "*/*",
+			"Accept-Encoding":      "gzip, deflate, sdch",
+			"Accept-Language":      "en-US",
+			"X-IG-Capabilities":    Capabilities,
+			"X-IG-Connection-Type": Type,
+		}).
+		SetHeaders(b.headers).
+		SetBody(b.body).
+		Post(Url + b.url)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return resp
 }
