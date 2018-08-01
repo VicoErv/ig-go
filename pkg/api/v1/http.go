@@ -156,8 +156,8 @@ func (b *Http) execGet() *resty.Response {
 }
 
 func (b *Http) execPost() *resty.Response {
-	resty.SetProxy("http://127.0.0.1:8888")
 	resty.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	resty.SetProxy("http://127.0.0.1:8888")
 
 	resp, err := resty.R().
 		SetHeaders(map[string]string{

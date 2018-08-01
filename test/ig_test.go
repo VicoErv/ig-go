@@ -29,6 +29,8 @@ func TestHttp(t *testing.T) {
 
 	http := v1.Http{}
 
+	user := v1.Login(os.Getenv("INSTAGRAM_USER"), os.Getenv("INSTAGRAM_PASSWORD"))
+
 	body := v1.GenerateSignature(map[string]interface{}{
 		"device_id":          v1.GenerateDeviceID(),
 		"login_attempt_user": 0,
@@ -43,6 +45,7 @@ func TestHttp(t *testing.T) {
 			"ig_sig_key_version=4&signed_body="+body).
 		With(map[string]string{
 			"Content-Type": "application/x-www-form-urlencoded",
+			"User-Agent":   user.Useragent,
 		}).
 		Exec()
 	t.Log(response)

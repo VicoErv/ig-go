@@ -1,15 +1,15 @@
 package v1
 
 import (
-	"fmt"
 	"math"
 	"strconv"
+	"strings"
 )
 
 // User as user
 type User struct {
 	username  string
-	useragent string
+	Useragent string
 	session   string
 }
 
@@ -47,19 +47,38 @@ var resolution = []string{
 	"2560x1440", "1080x1920", "1080x1920", "1080x1920",
 }
 
-func (u *User) userAgent() string {
-	var i, _ = u.api()
+func (u *User) info(username string) (string, string, string) {
+	md5int, _ := u.api(username)
+
+	info := Device[md5int%int64(len(Device))]
+
+	var manufacturer = info[0]
+	var device = info[1]
+	var model = info[2]
+
+	return manufacturer, device, model
+}
+
+func (u *User) userAgent(username string) string {
+	var i, _ = u.api(username)
 
 	var release = release[i%5]
 	var dpi = dpi[i%8]
 	var resolution = resolution[i%8]
 
-	fmt.Println(release, dpi, resolution)
-	return ""
+	var manufacturer, device, model = u.info(username)
+
+	var ua = []string{strconv.FormatInt(i, 10) + "/" + release, dpi + "dpi",
+		resolution, manufacturer,
+		model, device, "en-US"}
+
+	agent := strings.Join(ua, "; ")
+
+	return "Instagram " + AppVersion + " Android(" + agent + ")"
 }
 
-func (u *User) api() (int64, string) {
-	var hash = CreateMD5(u.username)
+func (u *User) api(username string) (int64, string) {
+	var hash = CreateMD5(username)
 	var n, _ = strconv.ParseInt(hash, 10, 32)
 
 	var f = int64(math.Round(float64(n) / 10e32))
@@ -72,6 +91,7 @@ func Login(username string, password string) *User {
 	user := &User{}
 
 	user.username = username
+	user.Useragent = user.userAgent(username)
 
 	return user
 }
