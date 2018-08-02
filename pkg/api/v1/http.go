@@ -157,7 +157,6 @@ func (b *Http) execGet() *resty.Response {
 
 func (b *Http) execPost() *resty.Response {
 	resty.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	resty.SetProxy("http://127.0.0.1:8888")
 
 	resp, err := resty.R().
 		SetHeaders(map[string]string{
@@ -166,6 +165,7 @@ func (b *Http) execPost() *resty.Response {
 			"Accept-Language":      "en-US",
 			"X-IG-Capabilities":    Capabilities,
 			"X-IG-Connection-Type": Type,
+			"Content-Type":         "application/x-www-form-urlencoded",
 		}).
 		SetHeaders(b.headers).
 		SetBody(b.body).

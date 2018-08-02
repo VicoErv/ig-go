@@ -13,26 +13,14 @@ type User struct {
 	session   string
 }
 
-// def useragent_hash
-// agent = [api + '/' + release, dpi + 'dpi',
-// 		 resolution, info[:manufacturer],
-// 		 info[:model], info[:device], @language]
-
-// {
-//   agent: agent.join('; '),
-//   version: Constants::PRIVATE_KEY[:APP_VERSION]
-// }
-// end
-
-// def useragent
-// format('Instagram %s Android(%s)',
-// useragent_hash[:version],
-// useragent_hash[:agent].rstrip)
-// end
-
-// def md5int
-// (md5.to_i(32) / 10e32).round
-// end
+type login struct {
+	DeviceID         string `json:"device_id"`
+	LoginAttemptUser int    `json:"login_attempt_user"`
+	Password         string `json:"password"`
+	Username         string `json:"username"`
+	Csrf             string `json:"_csrftoken"`
+	UuID             string `json:"_uuid"`
+}
 
 var release = []string{
 	"4.0.4", "4.3.1", "4.4.4", "5.1.1", "6.0.1",
@@ -92,6 +80,25 @@ func Login(username string, password string) *User {
 
 	user.username = username
 	user.Useragent = user.userAgent(username)
+
+	http := Http{}
+
+	body := GenerateSignature(login{
+		DeviceID:         GenerateDeviceID(),
+		LoginAttemptUser: 0,
+		Password:         password,
+		Username:         user.username,
+		Csrf:             "missing",
+		UuID:             GenerateUUID(),
+	})
+
+	http.
+		Post("accounts/login/",
+			"ig_sig_key_version=4&signed_body="+body).
+		With(map[string]string{
+			"User-Agent": user.Useragent,
+		}).
+		Exec()
 
 	return user
 }
