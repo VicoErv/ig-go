@@ -1,9 +1,12 @@
 package v1
 
 import (
+	"encoding/json"
 	"math"
 	"strconv"
 	"strings"
+
+	"github.com/vicoerv/ig-go/pkg/api/v1/model"
 )
 
 // User as user
@@ -11,6 +14,7 @@ type User struct {
 	username  string
 	Useragent string
 	session   string
+	Data      model.User
 }
 
 type login struct {
@@ -92,13 +96,17 @@ func Login(username string, password string) *User {
 		UuID:             GenerateUUID(),
 	})
 
-	http.
+	response := http.
 		Post("accounts/login/",
 			"ig_sig_key_version=4&signed_body="+body).
 		With(map[string]string{
 			"User-Agent": user.Useragent,
 		}).
 		Exec()
+
+	login := model.Login{}
+	json.Unmarshal(response.Body(), login)
+	user.Data = login.LoggedInUser
 
 	return user
 }

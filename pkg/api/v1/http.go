@@ -126,15 +126,17 @@ func (b *Http) With(headers map[string]string) *Http {
 }
 
 // Exec execute http
-func (b *Http) Exec() string {
-	var result string
+func (b *Http) Exec() *resty.Response {
+	resty.SetProxy("http://127.0.0.1:8888")
+	resty.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	var result *resty.Response
 
 	if b.method == "GET" {
 		var response = b.execGet()
-		result = string(response.Body())
+		result = response
 	} else if b.method == "POST" {
 		var response = b.execPost()
-		result = string(response.Body())
+		result = response
 	}
 
 	return result
@@ -156,7 +158,6 @@ func (b *Http) execGet() *resty.Response {
 }
 
 func (b *Http) execPost() *resty.Response {
-	resty.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	resp, err := resty.R().
 		SetHeaders(map[string]string{
